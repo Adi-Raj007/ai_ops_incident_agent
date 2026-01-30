@@ -186,7 +186,3 @@ This project is built incrementally with a strong focus on:
 - real system engineering practices  
 
 ---
-
-## 📌 Interview Summary
-
-I built a hybrid AI incident response system using LangChain for controlled LLM reasoning, Pydantic for strict validation, and LangGraph for deterministic workflow orchestration, backed by real system metrics.
