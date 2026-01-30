@@ -47,7 +47,11 @@ pytest>=8.0.0
 # ===============================
 chromadb>=0.4.22
 
+
 # ===============================
 # Optional: Dev & Code Quality
 # ===============================
 black>=24.2.0
+
+langchain-core
+langchain-groq
