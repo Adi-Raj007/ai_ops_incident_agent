@@ -13,8 +13,11 @@ def main():
 
     final_state = graph.invoke(initial_state)
 
-    print("\nFINAL RESULT:")
-    print(final_state["result"])
+    print("\nFINAL RESULT")
+    print("Severity:", final_state["severity"])
+    print("Root Cause:", final_state["root_cause"])
+    print()
+    print(final_state["evidence_report"])
 
 
 if __name__ == "__main__":

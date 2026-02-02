@@ -1,59 +1,69 @@
-# AI Ops Incident Response Agent (LangGraph + LangChain)
+# AI Ops Incident Response Agent  
+**LangGraph · LangChain · System Diagnostics · Explainable AI**
+
+---
 
 ## 📌 Project Overview
 
-This project is an AI-powered Incident Response Agent designed from a System Engineer’s perspective.  
-It helps in triaging common system issues by understanding natural language input, classifying the incident, validating decisions safely, and routing execution through a controlled workflow.
+This project is an **AI-powered Incident Response Agent** built with a **System Engineer–first mindset**.
 
-This system is NOT a chatbot.  
-It is a decision-making agent that combines deterministic rules, LLM-based reasoning, strict schema validation, and a state-machine workflow.
+It is NOT a chatbot.
+
+The system understands natural-language incident descriptions, forms **multiple diagnostic hypotheses**, validates them using **real system metrics (CPU, RAM, Disk)**, explains its reasoning with evidence, assigns **incident severity**, and orchestrates the workflow using **LangGraph**.
+
+The focus is on **correctness, safety, explainability, and production-style architecture**.
 
 ---
 
 ## 🎯 Problem Statement
 
-System engineers often receive unclear, human-written incident descriptions such as:
+System engineers often receive vague and ambiguous incident reports such as:
 
-- System feels slow
-- Everything is lagging
-- Website not responding
-- No space left on server
+- “My system is lagging”
+- “Everything feels slow”
+- “Server is behaving weird”
+- “Performance dropped suddenly”
 
-Manually interpreting these messages is time-consuming and error-prone.
+These descriptions cannot be trusted directly.
 
-This project automates the first level of incident triage by:
-1. Understanding the user’s intent
-2. Classifying the type of incident
-3. Executing the correct diagnostic checks
-4. Responding safely and transparently
+This project automates **first-level incident triage** by:
+1. Understanding user intent (LLM-assisted)
+2. Generating multiple diagnostic hypotheses
+3. Collecting real system evidence
+4. Eliminating incorrect causes
+5. Explaining the final decision
+6. Assigning severity for prioritization
 
 ---
 
 ## 🧠 Core Design Principles
 
-- Safety First – LLM outputs are never trusted directly  
-- Hybrid Intelligence – Rules + LLM (not LLM-only)  
-- Strict Validation – All AI outputs pass through Pydantic schemas  
-- Deterministic Workflow – Execution controlled using LangGraph  
-- System-Oriented – Uses real system metrics  
+- **Hybrid Intelligence** – Rule-based logic + LLM (LLM never has final authority)
+- **Multi-Hypothesis Reasoning** – Never assume a single root cause
+- **Evidence-Driven Decisions** – Use real system metrics only
+- **Explainability** – Every decision is justified with evidence
+- **Safety First** – Escalate when confidence is low
+- **Deterministic Workflow** – Controlled using LangGraph
 
 ---
 
 ## 🏗️ High-Level Architecture
 
-User Input  
+User Input (Natural Language)  
 ↓  
-Rule-Based Heuristics (Fast & Safe)  
+Rule + LLM Classification (LangChain)  
 ↓  
-LangChain + ChatGroq (Ambiguous Cases)  
+Hypothesis Generation  
 ↓  
-Pydantic Schema Validation  
+System Diagnostics (CPU / RAM / Disk)  
 ↓  
-LangGraph Workflow (State Machine)  
+Evidence Collection  
 ↓  
-System Tools (CPU / Disk / Service)  
+Root Cause Selection  
 ↓  
-Final Response  
+Severity Scoring  
+↓  
+Final Explainable Output  
 
 ---
 
@@ -65,8 +75,12 @@ ai_ops_incident_agent
 │   │   └── classifier_agent.py  
 │   ├── tools  
 │   │   └── system_tools.py  
-│   ├── schema  
-│   │   └── incident_schema.py  
+│   ├── diagnostics  
+│   │   └── hypothesis_engine.py  
+│   ├── evidence  
+│   │   └── evidence_builder.py  
+│   ├── severity  
+│   │   └── severity_engine.py  
 │   ├── graph  
 │   │   └── incident_graph.py  
 │   └── main.py  
@@ -79,110 +93,79 @@ ai_ops_incident_agent
 
 ## ⚙️ Technologies Used
 
-- Python 3.10+  
-- LangChain  
-- LangGraph  
-- ChatGroq (LLaMA-3)  
-- Pydantic  
-- psutil  
-- python-dotenv  
+- Python 3.10+
+- LangChain (LLM orchestration)
+- LangGraph (workflow orchestration)
+- ChatGroq (LLaMA-3)
+- Pydantic (schema validation)
+- psutil (real system metrics)
+- python-dotenv (configuration management)
 
 ---
 
-## 🧩 Incident Types Supported (Current Stage)
+## 🧩 Diagnostics Covered (Current Stage)
 
-CPU – High CPU usage, system slowness  
-Disk – Disk full, storage issues  
-Service – Service (e.g., nginx) down  
-Unknown – Ambiguous or unsafe to classify  
-
----
-
-## 🛡️ Safety Mechanisms
-
-- LLM output is validated using strict Pydantic schemas  
-- Only predefined incident types are allowed  
-- Confidence thresholds are enforced  
-- Low-confidence outputs fall back to unknown  
-- Unsafe cases are escalated, not guessed  
+| Component | Purpose |
+|---------|--------|
+| CPU | Detect CPU saturation |
+| Memory (RAM) | Detect memory pressure |
+| Disk | Detect storage bottlenecks |
+| Unknown | Safe escalation |
 
 ---
 
-## ▶️ How to Run the Project
+## 🔍 Multi-Hypothesis Diagnostic Engine (Rare Feature)
 
-1. Activate virtual environment  
+Instead of assuming a single root cause, the agent evaluates **multiple hypotheses sequentially**, similar to how real system engineers troubleshoot.
 
-source venv/bin/activate  
+Example flow:
 
-(Windows: venv\\Scripts\\activate)
+User input:  
+`"System is lagging"`
 
-2. Add Groq API key  
+Hypotheses evaluated:
+- CPU → normal
+- Memory → critical
+- Disk → skipped
 
-Create a `.env` file in project root:
-
-GROQ_API_KEY=your_api_key_here  
-
-3. Run the application  
-
-python -m app.main  
+Final Root Cause: **Memory pressure**
 
 ---
 
-## 🧪 Example Inputs
+## 🧪 Evidence-Based Explainability
 
-CPU usage is very high  
-System feels slow since morning  
-Disk is almost full  
-Everything is broken  
+Every output includes:
+- Metrics checked
+- Which causes were ruled out
+- Why the final cause was selected
 
----
+Example:
 
-## ✅ Example Output
+Evidence:
+- CPU usage: 12% (normal)
+- Memory usage: 89% (critical)
 
-AGENT: Starting incident classification  
-AGENT: Using LLM for classification  
-GRAPH: Entered CPU node  
+Reasoning:
+- CPU was ruled out due to normal usage.
+- Memory usage is critical, indicating a likely bottleneck.
 
-FINAL RESULT:  
-CPU usage is normal at 1.3%.  
-
-This demonstrates:
-- LLM-based understanding  
-- Deterministic workflow routing  
-- Real system metric verification  
-- Safe, non-hallucinatory output  
+This makes the system **auditable and trustworthy**.
 
 ---
 
-## ❌ Why This Is Not a Chatbot
+## 🚦 Severity Scoring (Production-Oriented)
 
-Chatbots give free-text replies.  
-This project follows a structured decision workflow.
+Severity is assigned **after evidence collection**, not from user text.
 
-Chatbots trust LLM blindly.  
-This project validates every LLM output with schema checks.
+| Condition | Severity |
+|--------|---------|
+| Any critical metric | CRITICAL |
+| Multiple warnings | HIGH |
+| Single warning | MEDIUM |
+| All metrics normal | LOW |
+| No clear root cause | MEDIUM (safe escalation) |
 
-Chatbots do not use system tools.  
-This project runs real diagnostics.
-
----
-
-## 🚀 Future Enhancements
-
-- Memory / RAM diagnostics  
-- Multi-hypothesis evaluation  
-- Log analysis agent  
-- FastAPI-based API service  
-- IAM / Access review extension  
-- Dockerized deployment  
+This mirrors real incident management systems.
 
 ---
 
-## 👨‍💻 Author Notes
-
-This project is built incrementally with a strong focus on:
-- engineering discipline  
-- safety-first AI  
-- real system engineering practices  
-
----

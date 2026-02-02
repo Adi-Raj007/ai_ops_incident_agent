@@ -1,80 +1,51 @@
-from langgraph.graph import StateGraph , END
-
+from langgraph.graph import StateGraph, END
 
 from app.agents.classifier_agent import classify_incident
-from app.tools.system_tools import (
-check_cpu_usage,
-check_disk_usage,
-check_service_status,
+from app.diagnostics.hypothesis_engine import (
+    generate_hypotheses,
+    evaluate_hypotheses,
 )
+from app.evidence.evidence_builder import build_evidence_report
+from app.severity.severity_engine import calculate_severity
 
 
-def cpu_node(state:dict)->dict:
-    print("GRAPH: Entered CPU node")
-    cpu =check_cpu_usage()
-    if cpu >80:
-        state["result"]=(f"CPU usage is {cpu}%."
-                         "Suggested action: check running processes or restart heavy services.")
-    else:
-        state["result"]=f"CPU usage is normal at {cpu}%."
-    return state
-def disk_node(state:dict)->dict:
-    print("GRAPH: Entered Disk node")
-    disk =check_disk_usage()
-    if disk >80:
-        state["result"]=(f"Disk usage is {disk}%."
-                         "Suggested action: clean logs or temporary files.")
-    else:
-        state["result"]=f"Disk usage is normal at {disk}%."
-    return state
+def diagnosis_node(state: dict) -> dict:
+    print("GRAPH: Entered DIAGNOSIS node")
 
-def service_node(state:dict)->dict:
-    print("GRAPH: Entered Service node")
-    status =check_service_status("nginx")
-    if status =="stopped":
-        state["result"]=("Nginx service is stopped. Suggested action: restart the service.")
-    else:
-        state["result"]="Service is running normally."
-    return state
+    incident_type = state.get("incident_type", "unknown")
 
-def unknown_node(state:dict)->dict:
-    print("GRAPH: Entered UNKNOWN node")
-    state["result"]=("Incident could not be confidently classified."
-                     "Escalating to system administrator.")
+    # 1️⃣ Generate hypotheses
+    hypotheses = generate_hypotheses(incident_type)
+
+    # 2️⃣ Evaluate hypotheses using system tools
+    root_cause, evidence = evaluate_hypotheses(hypotheses)
+
+    # 3️⃣ Build evidence-backed explanation
+    report = build_evidence_report(root_cause, evidence)
+
+    # 4️⃣ Calculate severity
+    severity = calculate_severity(root_cause, evidence)
+
+    # 5️⃣ Update state
+    state["root_cause"] = root_cause["metric"] if root_cause else "unknown"
+    state["severity"] = severity
+    state["evidence_report"] = report
+
     return state
 
 
 def build_incident_graph():
     graph = StateGraph(dict)
 
-    #Nodes
-    graph.add_node("classify",classify_incident)
-    graph.add_node("cpu",cpu_node)
-    graph.add_node("disk",disk_node)
-    graph.add_node("service",service_node)
-    graph.add_node("unknown",unknown_node)
+    # Nodes
+    graph.add_node("classify", classify_incident)
+    graph.add_node("diagnose", diagnosis_node)
 
-    #Entry Point
+    # Entry
     graph.set_entry_point("classify")
 
-    #conditional routing
-    graph.add_conditional_edges(
-        "classify",
-        lambda state: state["incident_type"],
-        {
-            "cpu":"cpu",
-            "disk":"disk",
-            "service":"service",
-            "unknown":"unknown",
-
-        },
-
-    )
-    graph.add_edge("cpu",END)
-    graph.add_edge("disk",END)
-    graph.add_edge("service",END)
-    graph.add_edge("unknown",END)
-
-
+    # Flow
+    graph.add_edge("classify", "diagnose")
+    graph.add_edge("diagnose", END)
 
     return graph.compile()
